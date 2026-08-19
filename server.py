@@ -12,7 +12,7 @@ def inicio():
     return send_from_directory(".", "index.html")
 
 
-@app.route("/chat", methods=["POST"])
+@app.route("/api/chat", methods=["POST"])
 def chat():
     data = request.get_json(silent=True) or {}
     mensaje = str(data.get("message", "")).strip()
