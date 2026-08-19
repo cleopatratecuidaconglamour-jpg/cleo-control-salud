@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Cleo Control Salud</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#17202a}
+body{margin:0;background:#f5f7f8}
+.wrap{max-width:520px;margin:auto;padding:24px 18px 40px}
+header{text-align:center;margin:12px 0 24px}
+h1{font-size:28px;margin:8px 0}.sub{color:#5d6d7e;line-height:1.4}
+.grid{display:grid;gap:12px}
+button{width:100%;border:0;border-radius:16px;background:white;padding:18px;text-align:left;font-size:18px;
+box-shadow:0 2px 10px rgba(0,0,0,.07);cursor:pointer}
+button:active{transform:scale(.99)}
+.card{background:white;border-radius:18px;padding:18px;margin-top:18px;box-shadow:0 2px 10px rgba(0,0,0,.07)}
+label{display:block;margin:12px 0 5px;font-weight:600}
+input,select,textarea{box-sizing:border-box;width:100%;padding:12px;border:1px solid #ccd1d1;border-radius:12px;font-size:16px}
+.action{margin-top:14px;text-align:center;background:#17202a;color:white;font-weight:700}
+.danger{background:#fff1f1}
+small{color:#6b7280;line-height:1.4;display:block;margin-top:20px}
+.hidden{display:none}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.entry{padding:10px 0;border-bottom:1px solid #eee;font-size:14px}
+.back{background:transparent;box-shadow:none;padding:6px 0;font-size:15px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<section id="home">
+<header><div style="font-size:42px">❤️🩸</div><h1>Cleo Control Salud</h1>
+<div class="sub">Tu asistente para el control diario de hipertensión y diabetes.</div></header>
+<div class="grid">
+<button onclick="show('pressure')">❤️ Registrar presión</button>
+<button onclick="show('glucose')">🩸 Registrar glucemia</button>
+<button onclick="show('profile');loadProfile()">👤 Mi ficha de salud</button>
+<button onclick="show('meds');renderMeds()">💊 Mi medicación</button>
+<button onclick="show('food')">🍎 Alimentación</button>
+<button onclick="show('foot')">🦶 Cuidado de los pies</button>
+<button onclick="records()">📊 Historial y gráficos</button>
+<button onclick="show('chat');initChat()">🤖 Hablar con Cleo</button>
+<button class="danger" onclick="show('urgent')">🚨 Necesito ayuda</button>
+</div>
+<small>Cleo Control Salud brinda educación y apoyo para el registro de controles. No diagnostica, prescribe ni sustituye la atención médica.</small>
+</section>
+
+<section id="pressure" class="hidden">
+<button class="back" onclick="home()">← Volver</button>
+<div class="card"><h2>❤️ Registrar presión</h2>
+<div class="row"><div><label>Sistólica</label><input id="sys" type="number" inputmode="numeric" placeholder="120"></div>
+<div><label>Diastólica</label><input id="dia" type="number" inputmode="numeric" placeholder="80"></div></div>
+<label>Pulso (opcional)</label><input id="pulse" type="number" inputmode="numeric">
+<label>¿Cómo te sentís?</label><textarea id="psym" placeholder="Sin síntomas, mareo, dolor..."></textarea>
+<button class="action" onclick="savePressure()">Guardar control</button>
+<div id="pmsg"></div></div>
+</section>
+
+<section id="glucose" class="hidden">
+<button class="back" onclick="home()">← Volver</button>
+<div class="card"><h2>🩸 Registrar glucemia</h2>
+<label>Glucemia (mg/dL)</label><input id="glu" type="number" inputmode="numeric" placeholder="110">
+<label>Momento</label><select id="gwhen"><option>En ayunas</option><option>Antes de comer</option><option>Después de comer</option><option>Antes de dormir</option><option>Durante la noche</option><option>Con síntomas</option></select>
+<label>¿Cómo te sentís?</label><textarea id="gsym" placeholder="Sin síntomas, temblor, sudoración..."></textarea>
+<button class="action" onclick="saveGlucose()">Guardar control</button>
+<div id="gmsg"></div></div>
+</section>
+
+
+<section id="profile" class="hidden">
+<button class="back" onclick="home()">← Volver</button>
+<div class="card"><h2>👤 Mi ficha de salud</h2>
+<label>Nombre</label><input id="pname" placeholder="Tu nombre">
+<label>Edad</label><input id="page" type="number" inputmode="numeric">
+<label>Diabetes</label>
+<select id="ptype"><option value="">No / no sé</option><option>Tipo 1</option><option>Tipo 2</option><option>Gestacional</option><option>Otro</option></select>
+<label>¿Tiene diagnóstico de hipertensión?</label>
+<select id="phyper"><option>No</option><option>Sí</option><option>En estudio</option></select>
+<label>¿Usa insulina?</label>
+<select id="pins"><option>No</option><option>Sí</option></select>
+<label>Alergias o antecedentes importantes</label>
+<textarea id="pnotes" placeholder="Ej.: enfermedad renal, alergia a penicilina..."></textarea>
+<label>Contacto de emergencia</label><input id="pem" placeholder="Nombre y teléfono">
+<button class="action" onclick="saveProfile()">Guardar ficha</button>
+<div id="profilemsg"></div></div>
+</section>
+
+<section id="meds" class="hidden">
+<button class="back" onclick="home()">← Volver</button>
+<div class="card"><h2>💊 Mi medicación</h2>
+<p>Registrá solamente medicamentos que ya hayan sido indicados por tu profesional.</p>
+<label>Medicamento</label><input id="mname" placeholder="Ej.: Losartán">
+<div class="row"><div><label>Dosis prescrita</label><input id="mdose" placeholder="Ej.: 50 mg"></div>
+<div><label>Horario</label><input id="mtime" type="time"></div></div>
+<label>Motivo</label><input id="mreason" placeholder="Ej.: hipertensión">
+<label>Indicaciones especiales</label><textarea id="mnotes" placeholder="Solo indicaciones ya dadas por tu profesional"></textarea>
+<button class="action" onclick="addMed()">Agregar medicamento</button>
+<div id="medmsg"></div>
+<h3>Medicamentos registrados</h3><div id="medlist"></div>
+<div class="danger card" style="margin-top:12px">
+<b>Seguridad</b>
+<p>La app no aumenta, reduce ni suspende dosis. Si olvidaste una dosis, no dupliques la siguiente salvo indicación específica de tu prescriptor. Para insulina, seguí únicamente tu esquema individual.</p>
+</div></div>
+</section>
+
+
+<section id="food" class="hidden">
+<button class="back" onclick="home()">← Volver</button>
+<div class="card">
+<h2>🍎 Alimentación</h2>
+<p>Orientación general para diabetes e hipertensión. Si tenés enfermedad renal, embarazo, alergias o un plan nutricional individual, seguí las indicaciones de tu equipo de salud.</p>
+<h3>🍽️ Método del plato</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0">
+<div class="card" style="margin:0"><b>½ plato</b><br>Verduras sin almidón</div>
+<div class="card" style="margin:0"><b>¼ plato</b><br>Proteína</div>
+<div class="card" style="margin:0"><b>¼ plato</b><br>Carbohidratos de calidad</div>
+<div class="card" style="margin:0"><b>🥤 Bebida</b><br>Preferentemente agua</div>
+</div>
+<label>¿Qué alimentos tenés disponibles?</label>
+<textarea id="foodhave" placeholder="Ej.: pollo, arroz, tomate, lechuga"></textarea>
+<button class="action" onclick="suggestMeal()">Organizar mi plato</button>
+<div id="foodmsg"></div>
+<h3>🧂 Para la presión</h3>
+<p>Elegí con más frecuencia alimentos frescos y revisá el sodio de los productos envasados. Los embutidos, snacks salados, sopas instantáneas, cubitos y algunas salsas pueden aportar mucho sodio.</p>
+<h3>🍬 Para la glucemia</h3>
+<p>No hace falta eliminar todos los carbohidratos. La cantidad y el tipo importan. Si usás insulina con conteo de carbohidratos, seguí solamente tu pauta individual.</p>
+</div>
+</section>
+
+<section id="foot" class="hidden">
+<button class="back" onclick="home()">← Volver</button>
+<div class="card">
+<h2>🦶 Revisión del pie diabético</h2>
+<p>Revisá ambos pies, incluida la planta y entre los dedos.</p>
+<label><input type="checkbox" class="footcheck" value="Herida o úlcera"> Herida o úlcera</label>
+<label><input type="checkbox" class="footcheck" value="Ampolla"> Ampolla</label>
+<label><input type="checkbox" class="footcheck" value="Enrojecimiento"> Enrojecimiento</label>
+<label><input type="checkbox" class="footcheck" value="Hinchazón"> Hinchazón</label>
+<label><input type="checkbox" class="footcheck" value="Secreción o pus"> Secreción o pus</label>
+<label><input type="checkbox" class="footcheck" value="Cambio de color"> Cambio de color</label>
+<label><input type="checkbox" class="footcheck" value="Zona negra"> Zona negra</label>
+<label><input type="checkbox" class="footcheck" value="Menos sensibilidad"> Menos sensibilidad de lo habitual</label>
+<label><input type="checkbox" class="footcheck" value="Zona muy caliente"> Zona muy caliente</label>
+<label><input type="checkbox" class="footcheck" value="Fiebre o malestar"> Fiebre o malestar general</label>
+<label>Observaciones</label>
+<textarea id="footnotes" placeholder="Ej.: pequeña ampolla en talón derecho"></textarea>
+<button class="action" onclick="reviewFoot()">Evaluar y guardar revisión</button>
+<div id="footmsg"></div>
+<h3>Cuidados diarios</h3>
+<p>Revisá los pies todos los días, lavalos y secalos bien, especialmente entre los dedos. Evitá caminar descalzo y revisá el interior del calzado antes de usarlo.</p>
+</div>
+</section>
+
+
+<section id="chat" class="hidden">
+<button class="back" onclick="home()">← Volver</button>
+<div class="card">
+<h2>🤖 Hablar con Cleo</h2>
+<p>Escribí con tus palabras. Ejemplos: “tengo 65 de azúcar y tiemblo”, “mi presión es 190/125” o “me olvidé la medicación”.</p>
+<div id="chatbox" style="height:330px;overflow:auto;background:#f8fafc;border-radius:14px;padding:12px;margin:12px 0"></div>
+<textarea id="chatinput" placeholder="Contame qué pasa..." style="min-height:80px"></textarea>
+<button class="action" onclick="sendChat()">Enviar</button>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+<button onclick="quickChat('Tengo la glucemia baja')" style="padding:10px;font-size:14px">🩸 Glucemia baja</button>
+<button onclick="quickChat('Tengo la presión muy alta')" style="padding:10px;font-size:14px">❤️ Presión alta</button>
+<button onclick="quickChat('Me olvidé la medicación')" style="padding:10px;font-size:14px">💊 Dosis olvidada</button>
+</div>
+<small>Modo IA: cuando la app está conectada al servidor, Cleo puede comprender conversaciones más naturales. Si el servidor no está disponible, conserva el modo local de seguridad.</small>
+</div>
+</section>
+
+<section id="urgent" class="hidden">
+<button class="back" onclick="home()">← Volver</button>
+<div class="card danger">
+<h2>🚨 Chequeo rápido de síntomas</h2>
+<p>Marcá lo que está pasando ahora.</p>
+<label><input type="checkbox" class="urgcheck" value="Dolor de pecho"> Dolor de pecho</label>
+<label><input type="checkbox" class="urgcheck" value="Dificultad para respirar"> Dificultad para respirar</label>
+<label><input type="checkbox" class="urgcheck" value="Debilidad o adormecimiento"> Debilidad o adormecimiento nuevo</label>
+<label><input type="checkbox" class="urgcheck" value="Dificultad para hablar"> Dificultad para hablar</label>
+<label><input type="checkbox" class="urgcheck" value="Cambio en la visión"> Cambio repentino en la visión</label>
+<label><input type="checkbox" class="urgcheck" value="Confusión"> Confusión importante</label>
+<label><input type="checkbox" class="urgcheck" value="Convulsión o pérdida de conciencia"> Convulsión o pérdida de conciencia</label>
+<label><input type="checkbox" class="urgcheck" value="Vómitos persistentes"> Vómitos persistentes</label>
+<label><input type="checkbox" class="urgcheck" value="Respiración rápida o profunda"> Respiración rápida o profunda</label>
+<label><input type="checkbox" class="urgcheck" value="Otro síntoma preocupante"> Otro síntoma nuevo que te preocupa mucho</label>
+<label>Presión actual, si la conocés</label>
+<div class="row"><input id="usys" type="number" inputmode="numeric" placeholder="Sistólica"><input id="udia" type="number" inputmode="numeric" placeholder="Diastólica"></div>
+<label>Glucemia actual, si la conocés</label>
+<input id="uglu" type="number" inputmode="numeric" placeholder="mg/dL">
+<button class="action" onclick="triage()">Evaluar ahora</button>
+<div id="urgmsg"></div>
+</div>
+</section>
+
+<section id="generic" class="hidden"><button class="back" onclick="home()">← Volver</button><div class="card"><h2 id="gt"></h2><p id="gb"></p></div></section>
+
+<section id="rec" class="hidden">
+<button class="back" onclick="home()">← Volver</button>
+<div class="card">
+<h2>📊 Historial y gráficos</h2>
+<div class="row">
+<div><label>Desde</label><input id="fromDate" type="date"></div>
+<div><label>Hasta</label><input id="toDate" type="date"></div>
+</div>
+<button class="action" onclick="records()">Aplicar filtro</button>
+
+<h3>❤️ Presión arterial</h3>
+<canvas id="pressureChart" height="180" style="width:100%;background:#fafafa;border-radius:12px"></canvas>
+
+<p style="font-size:13px;color:#667085">El gráfico de presión muestra la evolución de la presión sistólica. El resumen también calcula la diastólica.</p><h3>🩸 Glucemia</h3>
+<canvas id="glucoseChart" height="180" style="width:100%;background:#fafafa;border-radius:12px"></canvas>
+
+<h3>Resumen del período</h3>
+<div id="summaryBox"></div>
+
+<h3>Registros</h3>
+<div id="list"></div>
+
+<button class="action" onclick="copySummary()">📋 Copiar resumen para consulta</button>
+<button class="action" onclick="downloadSummary()">⬇️ Descargar resumen</button>
+<button class="action" onclick="clearRecords()">Borrar registros de prueba</button>
+</div>
+</section>
+</div>
+<script>
+function hideAll(){document.querySelectorAll('section').forEach(x=>x.classList.add('hidden'))}
+function show(id){hideAll();document.getElementById(id).classList.remove('hidden')}
+function home(){show('home')}
+function showInfo(t,b){show('generic');gt.textContent=t;gb.textContent=b}
+function getData(){return JSON.parse(localStorage.getItem('cleoRecords')||'[]')}
+function addData(x){let a=getData();a.unshift(x);localStorage.setItem('cleoRecords',JSON.stringify(a))}
+function now(){return new Date().toLocaleString()}
+function savePressure(){
+ let s=+sys.value,d=+dia.value;if(!s||!d){pmsg.innerHTML='<p>Ingresá ambos valores.</p>';return}
+ addData({type:'Presión',value:s+'/'+d+' mmHg',extra:pulse.value?'Pulso '+pulse.value:'',sym:psym.value,date:now()});
+ let m='<p><b>Control guardado.</b></p>';
+ if(s>180||d>120)m+='<p><b>⚠️ Lectura extremadamente elevada.</b> Repetí la medición después de al menos un minuto. Si persiste y tenés dolor de pecho, falta de aire, debilidad/adormecimiento, cambios en la visión, dificultad para hablar, confusión u otros síntomas preocupantes, buscá atención de emergencia.</p>';
+ pmsg.innerHTML=m
+}
+function saveGlucose(){
+ let g=+glu.value;if(!g){gmsg.innerHTML='<p>Ingresá el valor.</p>';return}
+ addData({type:'Glucemia',value:g+' mg/dL',extra:gwhen.value,sym:gsym.value,date:now()});
+ let m='<p><b>Control guardado.</b></p>';
+ if(g<70)m+='<p><b>⚠️ Glucemia baja.</b> Si estás consciente y podés tragar, seguí tu plan para hipoglucemia; como orientación general se usa 15 g de carbohidrato de acción rápida y volver a controlar aproximadamente 15 minutos después. Si no podés tragar, estás muy confundido/a, convulsionás o perdés el conocimiento, necesitás ayuda de emergencia y no deben darte comida o bebida por boca.</p>';
+ gmsg.innerHTML=m
+}
+
+function parseLocalDate(s){
+  // Handles browser-localized date strings from previous modules as best effort
+  let d=new Date(s);
+  return isNaN(d)?null:d;
+}
+function filteredRecords(){
+  let a=getData();
+  let f=fromDate&&fromDate.value?new Date(fromDate.value+'T00:00:00'):null;
+  let t=toDate&&toDate.value?new Date(toDate.value+'T23:59:59'):null;
+  return a.filter(x=>{
+    let d=parseLocalDate(x.date);
+    if(!d) return true;
+    if(f && d<f) return false;
+    if(t && d>t) return false;
+    return true;
+  });
+}
+function drawLineChart(canvasId, values, labels, title){
+  let c=document.getElementById(canvasId),ctx=c.getContext('2d');
+  let w=c.clientWidth||320,h=180,ratio=window.devicePixelRatio||1;
+  c.width=w*ratio;c.height=h*ratio;ctx.scale(ratio,ratio);
+  ctx.clearRect(0,0,w,h);
+  ctx.font='12px system-ui';ctx.fillStyle='#667085';
+  if(!values.length){ctx.fillText('Sin datos en este período',14,28);return}
+  let pad=32,min=Math.min(...values),max=Math.max(...values);
+  if(min===max){min-=1;max+=1}
+  ctx.strokeStyle='#d0d5dd';ctx.lineWidth=1;
+  for(let i=0;i<4;i++){
+    let y=pad+(h-2*pad)*i/3;
+    ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(w-pad,y);ctx.stroke();
+    let v=(max-(max-min)*i/3).toFixed(0);
+    ctx.fillText(v,4,y+4);
+  }
+  ctx.strokeStyle='#344054';ctx.lineWidth=2;ctx.beginPath();
+  values.forEach((v,i)=>{
+    let x=pad+(w-2*pad)*(values.length===1?0.5:i/(values.length-1));
+    let y=pad+(h-2*pad)*(max-v)/(max-min);
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  });ctx.stroke();
+  values.forEach((v,i)=>{
+    let x=pad+(w-2*pad)*(values.length===1?0.5:i/(values.length-1));
+    let y=pad+(h-2*pad)*(max-v)/(max-min);
+    ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fillStyle='#344054';ctx.fill();
+  });
+}
+function records(){
+  show('rec');
+  let a=filteredRecords();
+  list.innerHTML=a.length?a.map(x=>`<div class="entry"><b>${x.type}: ${x.value}</b><br>${x.extra||''}<br>${x.sym||''}<br>${x.date}</div>`).join(''):'Todavía no hay controles guardados en este período.';
+
+  let pr=a.filter(x=>x.type==='Presión').reverse();
+  let gl=a.filter(x=>x.type==='Glucemia').reverse();
+  let sys=pr.map(x=>parseInt(x.value.split('/')[0])).filter(Number.isFinite);
+  let dia=pr.map(x=>parseInt((x.value.split('/')[1]||'').replace(/\D/g,''))).filter(Number.isFinite);
+  let gv=gl.map(x=>parseInt(x.value)).filter(Number.isFinite);
+
+  drawLineChart('pressureChart',sys,[], 'Sistólica');
+  drawLineChart('glucoseChart',gv,[], 'Glucemia');
+
+  let avg=x=>x.length?(x.reduce((a,b)=>a+b,0)/x.length):null;
+  let pHigh=pr.filter(x=>{
+    let s=parseInt(x.value.split('/')[0]),d=parseInt((x.value.split('/')[1]||'').replace(/\D/g,''));
+    return s>180||d>120;
+  }).length;
+  let hypo=gl.filter(x=>parseInt(x.value)<70).length;
+
+  let parts=[];
+  if(pr.length){
+    parts.push(`<p><b>Presión:</b> ${pr.length} registros. Promedio sistólico ${avg(sys).toFixed(0)} mmHg${dia.length?`, promedio diastólico ${avg(dia).toFixed(0)} mmHg`:''}. Lecturas >180/120: ${pHigh}.</p>`);
+  }
+  if(gl.length){
+    parts.push(`<p><b>Glucemia:</b> ${gl.length} registros. Promedio ${avg(gv).toFixed(0)} mg/dL. Episodios <70 mg/dL: ${hypo}.</p>`);
+  }
+  if(!parts.length) parts.push('<p>No hay datos suficientes para resumir este período.</p>');
+  summaryBox.innerHTML=parts.join('');
+}
+function buildPlainSummary(){
+  let a=filteredRecords(), pr=a.filter(x=>x.type==='Presión'), gl=a.filter(x=>x.type==='Glucemia');
+  let lines=['Cleo Control Salud - Resumen de controles',''];
+  let prof=JSON.parse(localStorage.getItem('cleoProfile')||'{}');
+  if(prof.name) lines.push('Paciente: '+prof.name);
+  if(prof.age) lines.push('Edad: '+prof.age);
+  if(prof.type) lines.push('Diabetes: '+prof.type);
+  if(prof.hyper) lines.push('Hipertensión: '+prof.hyper);
+  lines.push('');
+  lines.push('Cantidad de controles de presión: '+pr.length);
+  lines.push('Cantidad de controles de glucemia: '+gl.length);
+  let hypo=gl.filter(x=>parseInt(x.value)<70).length;
+  let crisis=pr.filter(x=>{
+    let s=parseInt(x.value.split('/')[0]),d=parseInt((x.value.split('/')[1]||'').replace(/\D/g,''));
+    return s>180||d>120;
+  }).length;
+  lines.push('Hipoglucemias registradas (<70 mg/dL): '+hypo);
+  lines.push('Lecturas de presión >180/120 registradas: '+crisis);
+  lines.push('');
+  lines.push('Últimos registros:');
+  a.slice(0,12).forEach(x=>lines.push(`${x.date} - ${x.type}: ${x.value}${x.sym?' - Síntomas: '+x.sym:''}`));
+  lines.push('');
+  lines.push('Este resumen es informativo y no sustituye la valoración clínica.');
+  return lines.join('\n');
+}
+async function copySummary(){
+  let txt=buildPlainSummary();
+  try{await navigator.clipboard.writeText(txt);alert('Resumen copiado.');}
+  catch(e){alert(txt);}
+}
+function downloadSummary(){
+  let blob=new Blob([buildPlainSummary()],{type:'text/plain;charset=utf-8'});
+  let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='resumen_cleo_control_salud.txt';a.click();URL.revokeObjectURL(a.href);
+}
+function clearRecords(){if(confirm('¿Borrar los registros de prueba?')){localStorage.removeItem('cleoRecords');records()}}
+
+function saveProfile(){
+ let x={name:pname.value,age:page.value,type:ptype.value,hyper:phyper.value,ins:pins.value,notes:pnotes.value,em:pem.value};
+ localStorage.setItem('cleoProfile',JSON.stringify(x));
+ profilemsg.innerHTML='<p><b>Ficha guardada en este dispositivo.</b></p>';
+}
+function loadProfile(){
+ let x=JSON.parse(localStorage.getItem('cleoProfile')||'{}');
+ pname.value=x.name||''; page.value=x.age||''; ptype.value=x.type||''; phyper.value=x.hyper||'No'; pins.value=x.ins||'No'; pnotes.value=x.notes||''; pem.value=x.em||'';
+}
+function getMeds(){return JSON.parse(localStorage.getItem('cleoMeds')||'[]')}
+function saveMeds(a){localStorage.setItem('cleoMeds',JSON.stringify(a))}
+function addMed(){
+ if(!mname.value.trim() || !mdose.value.trim()){medmsg.innerHTML='<p>Ingresá al menos el medicamento y la dosis prescrita.</p>';return}
+ let a=getMeds(); a.push({id:Date.now(),name:mname.value.trim(),dose:mdose.value.trim(),time:mtime.value,reason:mreason.value.trim(),notes:mnotes.value.trim(),last:''}); saveMeds(a);
+ mname.value=mdose.value=mtime.value=mreason.value=mnotes.value=''; medmsg.innerHTML='<p><b>Medicamento guardado.</b></p>'; renderMeds();
+}
+function markTaken(id){
+ let a=getMeds(); let m=a.find(x=>x.id===id); if(m){m.last=now(); saveMeds(a); renderMeds();}
+}
+function removeMed(id){
+ if(confirm('¿Eliminar este medicamento del registro?')){saveMeds(getMeds().filter(x=>x.id!==id));renderMeds();}
+}
+function renderMeds(){
+ let a=getMeds();
+ medlist.innerHTML=a.length?a.map(m=>`<div class="entry"><b>${m.name} — ${m.dose}</b><br>${m.time?'Horario: '+m.time+'<br>':''}${m.reason?m.reason+'<br>':''}${m.last?'Último registro: '+m.last+'<br>':''}<button onclick="markTaken(${m.id})" style="margin-top:8px;padding:10px">✅ Registrar como tomado</button><button onclick="removeMed(${m.id})" style="margin-top:6px;padding:8px;font-size:14px">Eliminar</button></div>`).join(''):'Todavía no hay medicamentos registrados.';
+}
+
+
+function suggestMeal(){
+  let f=foodhave.value.trim();
+  if(!f){foodmsg.innerHTML='<p>Escribí primero qué alimentos tenés disponibles.</p>';return}
+  foodmsg.innerHTML=`<p><b>Podés organizar esos alimentos con esta guía:</b> intentá que aproximadamente la mitad del plato sean verduras sin almidón, un cuarto proteína y un cuarto una fuente de carbohidratos. Usá esta orientación como guía general y adaptala a tu plan individual.</p><p><b>Alimentos anotados:</b> ${f}</p>`;
+}
+function reviewFoot(){
+  let selected=[...document.querySelectorAll('.footcheck:checked')].map(x=>x.value);
+  let note=footnotes.value.trim();
+  let rec={type:'Revisión de pies',value:selected.length?selected.join(', '):'Sin hallazgos marcados',extra:'',sym:note,date:now()};
+  addData(rec);
+  let redFlags=selected.some(x=>['Herida o úlcera','Secreción o pus','Cambio de color','Zona negra','Fiebre o malestar'].includes(x));
+  if(redFlags){
+    footmsg.innerHTML='<p><b>⚠️ Hay un hallazgo que merece valoración profesional.</b> Evitá tratamientos caseros agresivos y buscá orientación sanitaria, especialmente si hay herida, secreción, cambio de color, tejido negro, fiebre o empeoramiento.</p>';
+  } else if(selected.length){
+    footmsg.innerHTML='<p><b>Revisión guardada.</b> Hay cambios anotados. Vigilalos y consultá si aumentan, aparece una herida o no mejoran.</p>';
+  } else {
+    footmsg.innerHTML='<p><b>Revisión guardada.</b> No marcaste lesiones visibles hoy. Continuá con la revisión diaria.</p>';
+  }
+}
+function triage(){
+  let symptoms=[...document.querySelectorAll('.urgcheck:checked')].map(x=>x.value);
+  let s=+usys.value||0,d=+udia.value||0,g=+uglu.value||0;
+  let emergencySymptoms=['Dolor de pecho','Dificultad para respirar','Debilidad o adormecimiento','Dificultad para hablar','Cambio en la visión','Confusión','Convulsión o pérdida de conciencia'];
+  let hasEmergency=symptoms.some(x=>emergencySymptoms.includes(x));
+  let bpExtreme=s>180||d>120;
+  let severeHypo=g>0 && g<54;
+  let hypo=g>=54 && g<70;
+  let ketoConcern=(g>=250 && symptoms.some(x=>['Vómitos persistentes','Respiración rápida o profunda','Confusión'].includes(x)));
+  let out='';
+  if((bpExtreme&&hasEmergency)||hasEmergency||severeHypo||ketoConcern){
+    out='<p><b>🚨 Esto puede requerir atención urgente.</b> Buscá asistencia médica de emergencia ahora. No conduzcas si estás confundido/a, muy débil, con alteración neurológica o pérdida de conciencia.</p>';
+  } else if(bpExtreme){
+    out='<p><b>⚠️ Presión extremadamente elevada.</b> Repetí la medición después de al menos un minuto. Si sigue por encima de 180/120 y aparece cualquier síntoma nuevo preocupante, buscá atención de emergencia. Si persiste sin síntomas de alarma, contactá a tu profesional cuanto antes.</p>';
+  } else if(hypo){
+    out='<p><b>⚠️ Glucemia baja.</b> Si estás consciente y podés tragar, seguí tu plan de hipoglucemia; como guía general se usan 15 g de carbohidrato de acción rápida y se vuelve a controlar aproximadamente 15 minutos después. Si empeorás o no podés tragar, necesitás ayuda urgente.</p>';
+  } else if(symptoms.length||g>=250){
+    out='<p><b>Hay síntomas o valores que conviene vigilar.</b> Registrá el episodio y contactá a tu equipo de salud si persisten, empeoran o se salen de tu plan individual.</p>';
+  } else {
+    out='<p>No marcaste señales de alarma en este chequeo. Esto no descarta un problema médico. Si te sentís mal o algo te preocupa, buscá valoración profesional.</p>';
+  }
+  urgmsg.innerHTML=out;
+  addData({type:'Chequeo de síntomas',value:(s||d)?`PA ${s||'?'} / ${d||'?'}`:(g?`Glucemia ${g} mg/dL`:'Sin valores'),extra:symptoms.join(', '),sym:'',date:now()});
+}
+
+
+function initChat(){
+  let box=document.getElementById('chatbox');
+  if(!box.dataset.started){
+    addBubble('cleo','Hola 👋 Soy Cleo Control Salud. Podés contarme tu valor de presión o glucemia, tus síntomas o una duda sobre tu medicación prescrita.');
+    box.dataset.started='1';
+  }
+}
+function addBubble(who,text){
+  let box=document.getElementById('chatbox');
+  let div=document.createElement('div');
+  div.style.cssText='margin:8px 0;padding:11px 12px;border-radius:14px;max-width:88%;line-height:1.35;'+
+    (who==='user'?'margin-left:auto;background:#e8eef5':'margin-right:auto;background:white;border:1px solid #e5e7eb');
+  div.textContent=text;
+  box.appendChild(div); box.scrollTop=box.scrollHeight;
+}
+function quickChat(t){chatinput.value=t;sendChat()}
+function extractBP(t){
+  let m=t.match(/(\d{2,3})\s*(?:\/|sobre|con)\s*(\d{2,3})/i);
+  return m?{s:+m[1],d:+m[2]}:null;
+}
+function extractGlucose(t){
+  let patterns=[
+    /(?:glucemia|glucosa|az[uú]car)\D{0,15}(\d{2,3})/i,
+    /(\d{2,3})\s*(?:mg\/?dl|de\s+az[uú]car)/i
+  ];
+  for(let p of patterns){let m=t.match(p);if(m)return +m[1]}
+  return null;
+}
+function hasAny(t,arr){return arr.some(x=>t.includes(x))}
+function normalizeText(t){return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
+
+async function sendChat(){
+  let raw=chatinput.value.trim(); if(!raw)return;
+  // Safety layer: let the existing local engine immediately handle obvious emergencies/critical values.
+  let t=normalizeText(raw), bp=extractBP(t), g=extractGlucose(t);
+  let emergencyWords=['dolor de pecho','falta de aire','dificultad para respirar','no puedo respirar','debilidad de un lado','adormecimiento','dificultad para hablar','no puedo hablar','perdida de vision','convulsion','desmayo','inconsciente','confusion'];
+  let obviousEmergency=hasAny(t,emergencyWords) || (bp && (bp.s>180||bp.d>120)) || (g!==null && g<70);
+  if(obviousEmergency){
+    return sendChatLocal();
+  }
+
+  addBubble('user',raw); chatinput.value='';
+  let prof=JSON.parse(localStorage.getItem('cleoProfile')||'{}');
+  let meds=JSON.parse(localStorage.getItem('cleoMeds')||'[]');
+  let recent=getData().slice(0,8);
+  try{
+    let r=await fetch('/api/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:raw,profile:prof,medications:meds,recent_records:recent})
+    });
+    if(!r.ok) throw new Error('Servidor no disponible');
+    let data=await r.json();
+    if(data.reply){addBubble('cleo',data.reply)}
+    else throw new Error('Respuesta vacía');
+  }catch(e){
+    addBubble('cleo','No pude conectar con la IA. Voy a usar el modo local de seguridad.');
+    chatinput.value=raw;
+    setTimeout(()=>sendChatLocal(),200);
+  }
+}
+
+function sendChatLocal(){
+  let raw=chatinput.value.trim(); if(!raw)return;
+  addBubble('user',raw); chatinput.value='';
+  let t=normalizeText(raw);
+  let bp=extractBP(t), g=extractGlucose(t);
+  let emergency=hasAny(t,['dolor de pecho','falta de aire','dificultad para respirar','no puedo respirar','debilidad de un lado','adormecimiento','dificultad para hablar','no puedo hablar','vision borrosa repentina','perdida de vision','convulsion','desmayo','inconsciente','confusion']);
+  let hypoSymptoms=hasAny(t,['tiemblo','temblor','sudor','sudando','mareo','hambre','palpitaciones']);
+  let dkaSymptoms=hasAny(t,['vomito','vomitos','vomitando','dolor abdominal','respiracion rapida','respiracion profunda','aliento afrutado','confusion']);
+  let medForgot=hasAny(t,['olvide','me olvide','no tome','se me paso']) && hasAny(t,['medicacion','medicamento','pastilla','insulina','losartan','metformina']);
+  let unsureDose=hasAny(t,['no recuerdo si','no se si']) && hasAny(t,['tome','medicacion','pastilla','insulina']);
+  let answer='';
+
+  if(emergency && bp && (bp.s>180 || bp.d>120)){
+    answer=`Tu presión ${bp.s}/${bp.d} junto con esos síntomas puede corresponder a una emergencia hipertensiva. Buscá atención médica de emergencia ahora. No esperes a que baje por sí sola y no tomes dosis extra por tu cuenta.`;
+  } else if(emergency){
+    answer='Los síntomas que describís pueden requerir atención urgente aunque no tenga todos tus valores. Buscá atención médica de emergencia ahora.';
+  } else if(g!==null && g<54){
+    answer=`Tu glucemia de ${g} mg/dL es muy baja. Si estás consciente y podés tragar, tratá la hipoglucemia inmediatamente según tu plan; como guía general se usan 15 g de carbohidrato de acción rápida y se controla otra vez en unos 15 minutos. Si estás muy confundido/a, convulsionás, perdés el conocimiento o no podés tragar, necesitás ayuda de emergencia y no deben darte comida o bebida por boca.`;
+    addData({type:'Glucemia',value:g+' mg/dL',extra:'Registrada desde chat',sym:raw,date:now()});
+  } else if(g!==null && g<70){
+    answer=`Tu glucemia de ${g} mg/dL está baja. Si estás consciente y podés tragar, seguí tu plan para hipoglucemia; como orientación general, tomá 15 g de carbohidrato de acción rápida y volvé a medir aproximadamente 15 minutos después.`;
+    if(hypoSymptoms) answer+=' Los síntomas que describís son compatibles con glucemia baja, así que tratala ahora.';
+    addData({type:'Glucemia',value:g+' mg/dL',extra:'Registrada desde chat',sym:raw,date:now()});
+  } else if(g!==null && g>240 && dkaSymptoms){
+    answer=`Tu glucemia es ${g} mg/dL y además describís síntomas que pueden aparecer en una cetoacidosis. Si podés medir cetonas, hacelo siguiendo tu plan, pero por los síntomas necesitás valoración médica urgente. No hagas ejercicio si hay cetonas.`;
+    addData({type:'Glucemia',value:g+' mg/dL',extra:'Registrada desde chat',sym:raw,date:now()});
+  } else if(g!==null && g>240){
+    answer=`Registré una glucemia de ${g} mg/dL. Es una cifra elevada. Si se mantiene alta, seguí tu plan individual y comprobá cetonas si tu equipo te indicó hacerlo; la ADA recomienda revisar cetonas cuando la glucemia supera 240 mg/dL. No ajustes insulina por tu cuenta fuera de tu pauta prescrita.`;
+    addData({type:'Glucemia',value:g+' mg/dL',extra:'Registrada desde chat',sym:raw,date:now()});
+  } else if(bp && (bp.s>180 || bp.d>120)){
+    answer=`Tu presión ${bp.s}/${bp.d} es extremadamente elevada. Esperá al menos un minuto y repetí la medición. Si sigue así y aparece dolor de pecho, falta de aire, debilidad, adormecimiento, cambios visuales o dificultad para hablar, buscá atención de emergencia. Si persiste sin esos síntomas, contactá a tu profesional cuanto antes.`;
+    addData({type:'Presión',value:bp.s+'/'+bp.d+' mmHg',extra:'Registrada desde chat',sym:raw,date:now()});
+  } else if(bp){
+    answer=`Registré tu presión ${bp.s}/${bp.d}. Para interpretarla bien necesito considerar tu objetivo individual y cómo te sentís. Si es distinta a lo habitual, repetila en reposo y guardá el resultado.`;
+    addData({type:'Presión',value:bp.s+'/'+bp.d+' mmHg',extra:'Registrada desde chat',sym:raw,date:now()});
+  } else if(unsureDose){
+    answer='Si no recordás si ya tomaste una dosis, no repitas otra solo para asegurarte. Revisá el pastillero, blíster o registro. Si seguís sin poder confirmarlo, consultá las instrucciones específicas de ese medicamento o a un profesional/farmacéutico.';
+  } else if(medForgot){
+    answer='Las indicaciones para una dosis olvidada dependen del medicamento. No dupliques la siguiente dosis salvo que tu prescriptor te haya indicado específicamente hacerlo. Decime el nombre del medicamento, la dosis prescrita, la hora habitual y cuánto tiempo pasó.';
+  } else if(hasAny(t,['presion alta','tension alta'])){
+    answer='Decime la presión completa, por ejemplo 165/95, y si tenés síntomas como dolor de pecho, falta de aire, debilidad, cambios en la visión o dificultad para hablar.';
+  } else if(hasAny(t,['glucemia baja','azucar baja','hipoglucemia'])){
+    answer='Decime cuánto te dio la glucemia en mg/dL y si estás consciente y podés tragar normalmente. Si estás muy confundido/a, inconsciente, convulsionando o no podés tragar, necesitás ayuda de emergencia.';
+  } else if(hasAny(t,['hola','buen dia','buenas','hey'])){
+    answer='Hola 👋 ¿Querés registrar presión, glucemia, revisar una medicación o contarme algún síntoma?';
+  } else {
+    answer='Puedo ayudarte mejor si me decís el valor de presión o glucemia, los síntomas que tenés, o el nombre de tu medicamento prescrito. Si creés que estás ante una emergencia, buscá atención médica inmediata.';
+  }
+  setTimeout(()=>addBubble('cleo',answer),150);
+}
+
+home()
+</script>
+</body>
+</html>
